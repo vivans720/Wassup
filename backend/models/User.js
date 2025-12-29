@@ -4,13 +4,11 @@ const userSchema = new mongoose.Schema(
   {
     phoneNumber: {
       type: String,
-      required: true,
       unique: true,
       sparse: true,
     },
     phoneSuffix: {
       type: String,
-      required: true,
     },
     username: {
       type: String,
