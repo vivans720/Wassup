@@ -4,8 +4,8 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/dbConnect");
 const bodyParser = require("body-parser");
-
 const authRoute = require("./routes/authRoute");
+const chatRoute = require("./routes/chatRoute");
 dotenv.config();
 
 const PORT = process.env.PORT || 8000;
@@ -24,6 +24,7 @@ connectDB();
 //routes
 
 app.use("/api/auth", authRoute);
+app.use("/api/chat", chatRoute);
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

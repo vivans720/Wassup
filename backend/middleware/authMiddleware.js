@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const response = require("../utils/responseHandler");
 
 const authMiddleware = (req, res, next) => {
   const authToken = req.cookies.auth_token;
@@ -17,4 +18,3 @@ const authMiddleware = (req, res, next) => {
 };
 
 module.exports = authMiddleware;
-
