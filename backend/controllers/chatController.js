@@ -61,9 +61,18 @@ exports.sendMessage = async (req, res) => {
     conversation.unreadCount += 1;
     await conversation.save();
 
-    const populateMessage = await Message.findOne(message?._id)
+    const populateMessage = await Message.findById(message?._id)
       .populate("sender", "username profilePicture")
       .populate("receiver", "username profilePicture");
+
+    if (req.io && req.socketUserMap) {
+      const receiverSocketId = req.socketUserMap.get(receiverId);
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit("receive_message", populateMessage);
+        message.messageStatus = "delivered";
+        await message.save();
+      }
+    }
     return responseHandler(
       res,
       200,
@@ -157,6 +166,20 @@ exports.markAsRead = async (req, res) => {
       { $set: { messageStatus: "read" } }
     );
 
+    if (req.io && req.socketUserMap) {
+      for (const message of messages) {
+        const senderSocketId = req.socketUserMap.get(message.sender.toString());
+        if (senderSocketId) {
+          const updatedMessage = {
+            _id: message._id,
+            messageStatus: "read",
+          };
+          req.io.to(senderSocketId).emit("message_read", updatedMessage);
+          await message.save();
+        }
+      }
+    }
+
     return responseHandler(res, 200, "Message marked as read", messages);
   } catch (error) {
     console.error(error);
@@ -176,6 +199,15 @@ exports.deleteMessage = async (req, res) => {
       return responseHandler(res, 401, "Unauthorized");
     }
     await message.deleteOne();
+
+    if (req.io && req.socketUserMap) {
+      const receiverSocketId = req.socketUserMap.get(
+        message.receiver.toString()
+      );
+      if (receiverSocketId) {
+        req.io.to(receiverSocketId).emit("message_deleted", messageId);
+      }
+    }
     return responseHandler(res, 200, "Message deleted successfully");
   } catch (error) {
     console.error(error);
